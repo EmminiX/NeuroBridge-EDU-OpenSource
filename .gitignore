@@ -1,0 +1,87 @@
+# Dependencies
+node_modules/
+python_backend/venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Database files
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# API Keys and sensitive data
+*.key
+*.pem
+.neurobridge/
+
+# Test files
+test_*.py
+*_test.py
+coverage/
+.coverage
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Audio files (test data)
+*.wav
+*.mp3
+*.m4a
+*.flac
+
+# Model cache
+.cache/
+models/
+
+# Docker
+.docker/
+
+# Exports
+exports/

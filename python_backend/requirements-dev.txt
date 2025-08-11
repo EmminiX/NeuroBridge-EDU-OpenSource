@@ -1,0 +1,46 @@
+# Development dependencies - lightweight version without ML libraries
+# This allows local development and testing without heavy PyTorch dependencies
+
+# Core dependencies with compatible versions
+fastapi==0.100.0
+uvicorn[standard]==0.23.1
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# Cryptography for secure API key storage
+cryptography==41.0.7
+
+# Database  
+sqlalchemy==2.0.19
+aiosqlite==0.19.0
+greenlet==3.2.4  # Required for SQLAlchemy async operations
+
+# AI/ML Services (OpenAI only - no PyTorch)
+openai==1.35.0  # Updated for better Whisper support
+numpy==1.26.0  # Compatible with Python 3.12 (used by audio processing only)
+
+# HTTP and WebSocket
+aiohttp==3.9.5
+websockets==11.0.3
+sse-starlette==1.6.1
+
+# File handling
+python-multipart==0.0.6
+reportlab==4.0.4
+
+# Testing (optional)
+pytest==7.4.0
+pytest-asyncio==0.21.0
+httpx==0.24.1
+
+# Audio processing (basic - without ML)
+soundfile==0.12.1
+
+# Note: The following dependencies are excluded from development requirements:
+# - torch>=2.0.0,<2.3.0  # Heavy PyTorch dependency
+# - faster-whisper==1.0.2  # Requires PyTorch
+# - ctranslate2>=4.0.0  # Requires heavy C++ libraries
+#
+# These are available in the Docker containers and production environments
+# For local development, the application will gracefully fall back to API-only transcription

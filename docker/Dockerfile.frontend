@@ -1,0 +1,63 @@
+# NeuroBridge EDU Frontend Dockerfile
+# Multi-stage build for optimized production deployment
+
+# Build stage
+FROM node:20-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git python3 make g++
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies needed for build)
+RUN npm ci --silent
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine AS production
+
+# Install runtime dependencies
+RUN apk add --no-cache curl
+
+# Create non-root user
+RUN addgroup -g 1001 -S neurobridge && \
+    adduser -S neurobridge -u 1001 -G neurobridge
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Install serve for production deployment
+RUN npm install -g serve@14.2.1
+
+# Change ownership
+RUN chown -R neurobridge:neurobridge /app
+
+# Switch to non-root user
+USER neurobridge
+
+# Expose port
+EXPOSE 3131
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3131/ || exit 1
+
+# Environment variables
+ENV NODE_ENV=production
+
+# Start the application
+CMD ["serve", "-s", "dist", "-l", "3131"]

@@ -1,0 +1,123 @@
+# NeuroBridge EDU Docker Ignore File
+# Optimize Docker build by excluding unnecessary files
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CLAUDE.md
+docs/
+*.md
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Python virtual environments
+python_backend/venv/
+python_backend/env/
+python_backend/.venv/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Frontend build artifacts (handled separately)
+dist/
+build/
+
+# Test coverage
+coverage/
+*.coverage
+.nyc_output
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database files (use volumes instead)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+
+# Docker files (avoid recursive inclusion)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Windows specific
+*.lnk
+
+# Test files
+test_*.py
+*_test.py
+tests/
+.pytest_cache/
+
+# Temporary files
+*.temp
+*.tmp
+
+# Package manager lock files (keep only one)
+# yarn.lock
+# pnpm-lock.yaml

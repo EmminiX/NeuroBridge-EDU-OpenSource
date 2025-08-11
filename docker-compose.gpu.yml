@@ -1,0 +1,75 @@
+
+services:
+  # NeuroBridge EDU Frontend (React + Vite)
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: neurobridge-frontend-gpu
+    ports:
+      - "3131:3131"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3939
+    # No volumes needed for production deployment
+    # volumes:
+    #   - ./src:/app/src:ro
+    #   - ./public:/app/public:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - neurobridge-network
+
+  # NeuroBridge EDU Backend with GPU support (Python FastAPI + CUDA)
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend.gpu
+    container_name: neurobridge-backend-gpu
+    ports:
+      - "3939:3939"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=3939
+      - LOG_LEVEL=INFO
+      - DATABASE_PATH=/app/data/neurobridge.db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CORS_ORIGINS=http://localhost:3131,http://localhost:3939,http://localhost:8000
+      # Local Whisper configuration
+      - LOCAL_WHISPER_ENABLED=true
+      - LOCAL_WHISPER_MODEL_SIZE=small  # Use small model for GPU deployment
+      - LOCAL_WHISPER_DEVICE=cuda
+      - TRANSCRIPTION_METHOD=local_first
+      # CUDA configuration
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - neurobridge-db:/app/data
+      - neurobridge-models:/app/.cache  # Persistent model cache
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3939/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s  # Longer start period for model loading
+    networks:
+      - neurobridge-network
+
+volumes:
+  neurobridge-db:
+    driver: local
+  neurobridge-models:
+    driver: local
+
+networks:
+  neurobridge-network:
+    driver: bridge
+    name: neurobridge-network

@@ -1,0 +1,117 @@
+# NeuroBridge EDU Backend Dockerfile (GPU-enabled)
+# Multi-stage build with NVIDIA CUDA support for local Whisper acceleration
+
+# Build stage with CUDA support
+FROM nvidia/cuda:12.1-devel-ubuntu22.04 AS builder
+
+# Install Python 3.11
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
+    python3-pip \
+    build-essential \
+    curl \
+    git \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create symbolic links for python3.11
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# Create virtual environment
+RUN python3.11 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip and install wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy requirements and install Python dependencies
+COPY python_backend/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Install PyTorch with CUDA support (override CPU version from requirements)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Pre-download Whisper models during build for better startup performance
+# Download multiple model sizes for different use cases
+RUN python -c "\
+import os; \
+os.environ['HF_HUB_DISABLE_PROGRESS_BARS'] = '1'; \
+os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'; \
+from faster_whisper import WhisperModel; \
+print('Downloading Whisper models...'); \
+models = ['tiny', 'base', 'small']; \
+[print(f'Downloading {model} model...') or WhisperModel(model, device='cpu', download_root='/tmp/whisper_models') or print(f'{model} model downloaded successfully') for model in models]; \
+print('All Whisper models downloaded')"
+
+# Production stage with CUDA runtime
+FROM nvidia/cuda:12.1-runtime-ubuntu22.04 AS production
+
+# Install Python 3.11 and runtime dependencies
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-venv \
+    curl \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create symbolic links for python3.11
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# Create non-root user for security
+RUN groupadd -g 1001 neurobridge && \
+    useradd -r -u 1001 -g neurobridge neurobridge
+
+# Copy virtual environment and Whisper models from builder stage
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /tmp/whisper_models /app/.cache/whisper
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set working directory
+WORKDIR /app
+
+# Create data and model cache directories with proper permissions
+RUN mkdir -p /app/data /app/.cache && chown -R neurobridge:neurobridge /app/data /app/.cache
+
+# Copy application code
+COPY python_backend/ ./
+RUN chown -R neurobridge:neurobridge /app
+
+# Switch to non-root user
+USER neurobridge
+
+# Expose port
+EXPOSE 3939
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:3939/health || exit 1
+
+# Environment variables for GPU-enabled deployment
+ENV HOST=0.0.0.0 \
+    PORT=3939 \
+    LOG_LEVEL=INFO \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    HF_HUB_CACHE=/app/.cache/huggingface \
+    TRANSFORMERS_CACHE=/app/.cache/transformers \
+    WHISPER_CACHE=/app/.cache/whisper \
+    LOCAL_WHISPER_ENABLED=true \
+    LOCAL_WHISPER_MODEL_SIZE=small \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Start application
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3939"]
