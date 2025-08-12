@@ -1,13 +1,13 @@
 """
 AI-powered summarization service using OpenAI GPT-4.1
-Educational content summarization with async implementation
+General-purpose audio transcript summarization with async implementation
 """
 
 import logging
 from typing import Optional, Dict, Any
 from openai import AsyncOpenAI
 from .client import get_openai_client
-from .prompts import EDUCATIONAL_SUMMARY_PROMPT, EDUCATIONAL_SUMMARY_SYSTEM_PROMPT
+from .prompts import GENERAL_SUMMARY_PROMPT, GENERAL_SUMMARY_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class SummarizationService:
                 messages=[
                     {
                         "role": "system",
-                        "content": EDUCATIONAL_SUMMARY_SYSTEM_PROMPT
+                        "content": GENERAL_SUMMARY_SYSTEM_PROMPT
                     },
                     {
                         "role": "user", 
@@ -145,7 +145,7 @@ class SummarizationService:
                 messages=[
                     {
                         "role": "system",
-                        "content": EDUCATIONAL_SUMMARY_SYSTEM_PROMPT
+                        "content": GENERAL_SUMMARY_SYSTEM_PROMPT
                     },
                     {
                         "role": "user", 
@@ -234,7 +234,7 @@ class SummarizationService:
     ) -> str:
         """Build context-aware user prompt for summarization"""
         
-        prompt_parts = [EDUCATIONAL_SUMMARY_PROMPT]
+        prompt_parts = [GENERAL_SUMMARY_PROMPT]
         
         if title:
             prompt_parts.append(f"\nTopic/Title: {title}")

@@ -1,5 +1,9 @@
 # 🧠 NeuroBridge EDU - Open Source Edition
 
+<div align="center">
+  <img src="public/app.jpg" alt="NeuroBridge EDU Application" width="75%" />
+</div>
+
 **Real-time AI-powered transcription and summarization for everyone.** 
 
 The open source version of NeuroBridge EDU provides professional-grade speech-to-text transcription using **local Whisper models** with OpenAI API fallback and intelligent GPT-4 summarization, designed for individual users, researchers, content creators, and small organizations who need privacy-focused, cost-effective transcription capabilities.

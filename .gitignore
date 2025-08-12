@@ -85,3 +85,11 @@ models/
 
 # Exports
 exports/
+
+# Archive folder (development artifacts)
+Archive/
+
+# Local development files
+CLAUDE.md
+backend_*.log
+test_audio.pcm

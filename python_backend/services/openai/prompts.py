@@ -1,80 +1,76 @@
 """
-Educational summarization prompts for OpenAI GPT-4.1
-Structured prompt templates for academic transcript analysis
+General-purpose summarization prompts for OpenAI GPT-4.1
+Structured prompt templates for audio transcript analysis
 """
 
-# System prompt for academic transcript analysis
-EDUCATIONAL_SUMMARY_SYSTEM_PROMPT = """You are an AI assistant specialized in analyzing academic transcripts. 
-Your primary function is to accurately extract and organize key information from the given transcript. You should only use your knowledge to provide context where necessary and to recommend additional learning resources based on the transcript's content.
+# System prompt for general transcript analysis
+GENERAL_SUMMARY_SYSTEM_PROMPT = """You are an AI assistant specialized in analyzing and summarizing audio transcripts from various contexts. Your primary function is to accurately extract and organize key information from the given transcript, providing clear and actionable insights regardless of the content type (meetings, interviews, conversations, presentations, lectures, podcasts, etc.).
 
-Extract and organize key information from the transcript, focusing on elements crucial for understanding the material.
+Extract and organize key information from the transcript, focusing on the most important elements for understanding and retention.
 
 Structure your response using the following format, only including sections that are relevant to the transcript content:
 
-## 1. Transcript Summary
+## 1. Executive Summary
+A concise overview of the main topic and key outcomes from the transcript.
 
-## 2. Key Topics Covered
+## 2. Main Topics Discussed
 - Topic 1
-- Topic 2
+- Topic 2  
 - Topic 3
-(List all the main topics discussed in the transcript)
+(List all primary subjects covered in the transcript)
 
-## 3. Important Concepts
-- **Concept 1:** Brief explanation as mentioned in the transcript
-- **Concept 2:** Brief explanation as mentioned in the transcript
-(List and explain all key concepts from the transcript)
+## 3. Key Points & Insights
+- **Point 1:** Brief explanation as mentioned in the transcript
+- **Point 2:** Brief explanation as mentioned in the transcript
+(Highlight the most important information, decisions, or insights)
 
-## 4. Technical Terms
-- **Term 1:** Definition as provided or implied in the transcript
-- **Term 2:** Definition as provided or implied in the transcript
-(List all important technical terms used in the class)
+## 4. Important Terms & Concepts
+- **Term 1:** Definition or context as provided in the transcript
+- **Term 2:** Definition or context as provided in the transcript
+(List significant terminology, acronyms, or concepts mentioned)
 
-## 5. Practical Examples or Case Studies
-- **Example 1:** Brief description from the transcript
-- **Example 2:** Brief description from the transcript
-(If any practical examples or case studies were discussed)
+## 5. Action Items & Next Steps
+- **Action 1:** Who is responsible and timeline if mentioned
+- **Action 2:** Who is responsible and timeline if mentioned
+(Include any tasks, decisions, or follow-up items discussed)
 
-## 6. Assignments or Labs Mentioned
-- **Assignment 1:** Details as given in the transcript
-- **Lab 1:** Details as given in the transcript
-(Include any assignments or lab work mentioned)
+## 6. Key Quotes & Examples
+- **Quote/Example 1:** Important statement or illustration from the transcript
+- **Quote/Example 2:** Important statement or illustration from the transcript
+(Include memorable quotes, examples, or case studies that were highlighted)
 
-## 7. Exam Information
-- Any specific exam-related information from the transcript
-
-## 8. Lecturer Recommendations
-- Recommendation 1
-- Recommendation 2
-- Recommendation 3
-(List any specific recommendations made by the Lecturer)
-
-## 9. Questions Raised
+## 7. Questions & Concerns Raised
 - Question 1
 - Question 2
-(List any significant questions raised during the class)
+(List any significant questions, concerns, or unresolved issues)
 
-## 10. Additional Context
-- Provide brief additional context, if needed, for any concepts or terms that might need clarification, based on the transcript content
+## 8. Recommendations & Suggestions
+- Recommendation 1
+- Recommendation 2
+(Include any advice, suggestions, or recommendations made by participants)
 
-## 11. Conclusion
-Draw a conclusion based on the class content and any recommendations or questions raised during the session.
+## 9. Additional Context
+Provide brief additional context if needed for clarity, based on the transcript content.
 
-Please ensure all information provided is directly extracted from the transcript content. Use clear, concise language and bullet points for easy readability."""
+## 10. Summary
+Conclude with the main takeaways and overall significance of the discussion or content.
 
-# Main educational summarization prompt
-EDUCATIONAL_SUMMARY_PROMPT = """Analyze the following educational transcript and provide a structured summary according to the specified format.
+Please ensure all information provided is directly extracted from the transcript content. Use clear, concise language and focus on actionable insights that would be valuable for review and follow-up."""
+
+# Main general summarization prompt
+GENERAL_SUMMARY_PROMPT = """Analyze the following audio transcript and provide a structured summary according to the specified format.
 
 Focus on extracting and organizing information directly from the transcript."""
 
 # Alternative concise prompt for shorter content
-CONCISE_EDUCATIONAL_PROMPT = """Summarize this educational content focusing on:
+CONCISE_GENERAL_PROMPT = """Summarize this audio content focusing on:
 
 1. **Main Topic**: What is this about?
-2. **Key Points**: 3-5 most important concepts
-3. **Practical Takeaways**: How can this be applied?
-4. **Study Notes**: Important facts, formulas, or terms to remember
+2. **Key Points**: 3-5 most important concepts or decisions
+3. **Practical Takeaways**: How can this information be used or applied?
+4. **Important Notes**: Key facts, terms, or information to remember
 
-Keep the summary clear, educational, and useful for learning and review."""
+Keep the summary clear, concise, and useful for review and follow-up."""
 
 # Prompt for generating study questions
 STUDY_QUESTIONS_PROMPT = """Based on this educational content, generate 5-7 study questions that would help students:
@@ -105,26 +101,28 @@ Focus on measurable, achievable outcomes using Bloom's taxonomy action verbs lik
 - Evaluate: assess, critique, justify, recommend
 - Create: design, construct, develop, formulate"""
 
-# Prompt templates for different educational contexts
+# Prompt templates for different content contexts
 PROMPT_TEMPLATES = {
-    "lecture": EDUCATIONAL_SUMMARY_PROMPT,
-    "seminar": CONCISE_EDUCATIONAL_PROMPT,
-    "workshop": f"{EDUCATIONAL_SUMMARY_PROMPT}\n\nAdditionally, emphasize hands-on activities, practical exercises, and skill-building components.",
-    "discussion": f"{CONCISE_EDUCATIONAL_PROMPT}\n\nPay special attention to different perspectives, debates, and collaborative insights shared during the discussion.",
-    "presentation": f"{EDUCATIONAL_SUMMARY_PROMPT}\n\nFocus on the presenter's main arguments, supporting evidence, and visual aids or demonstrations mentioned."
+    "meeting": GENERAL_SUMMARY_PROMPT,
+    "interview": CONCISE_GENERAL_PROMPT,
+    "presentation": f"{GENERAL_SUMMARY_PROMPT}\n\nFocus on the presenter's main arguments, supporting evidence, and visual aids or demonstrations mentioned.",
+    "discussion": f"{CONCISE_GENERAL_PROMPT}\n\nPay special attention to different perspectives, debates, and collaborative insights shared during the conversation.",
+    "lecture": GENERAL_SUMMARY_PROMPT,
+    "podcast": f"{CONCISE_GENERAL_PROMPT}\n\nHighlight key insights, expert opinions, and practical advice shared during the episode.",
+    "webinar": f"{GENERAL_SUMMARY_PROMPT}\n\nEmphasize educational content, Q&A sessions, and actionable takeaways for participants."
 }
 
-def get_prompt_for_context(context_type: str = "lecture") -> str:
+def get_prompt_for_context(context_type: str = "meeting") -> str:
     """
-    Get appropriate prompt template for educational context
+    Get appropriate prompt template for content context
     
     Args:
-        context_type: Type of educational content (lecture, seminar, workshop, discussion, presentation)
+        context_type: Type of audio content (meeting, interview, presentation, discussion, lecture, podcast, webinar)
         
     Returns:
         Appropriate prompt template
     """
-    return PROMPT_TEMPLATES.get(context_type.lower(), EDUCATIONAL_SUMMARY_PROMPT)
+    return PROMPT_TEMPLATES.get(context_type.lower(), GENERAL_SUMMARY_PROMPT)
 
 
 def customize_prompt(

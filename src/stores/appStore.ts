@@ -201,11 +201,32 @@ export const useAppStore = create<AppState>()(
             state.isGeneratingSummary = false;
           });
           
+          // Create user-friendly error message for missing API key
+          let errorMessage = error instanceof Error ? error.message : 'Failed to generate summary';
+          let errorCode = 'SUMMARY_GENERATION_FAILED';
+          
+          // Check if this is an API key related error
+          if (errorMessage.includes('No OpenAI API key') || 
+              errorMessage.includes('API key') || 
+              errorMessage.includes('500')) {
+            errorMessage = 'OpenAI API key required for generating summaries. Please add your API key in Settings.';
+            errorCode = 'API_KEY_REQUIRED';
+          }
+          
+          // Create error with consistent ID for auto-dismissal
+          const errorId = `${errorCode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           addError({
-            code: 'SUMMARY_GENERATION_FAILED',
-            message: error instanceof Error ? error.message : 'Failed to generate summary',
+            id: errorId,
+            code: errorCode,
+            message: errorMessage,
             timestamp: new Date().toISOString(),
           });
+          
+          // Auto-dismiss error after 5 seconds
+          setTimeout(() => {
+            const { clearError } = get();
+            clearError(errorId);
+          }, 5000);
         }
       },
 
@@ -484,10 +505,10 @@ export const useAppStore = create<AppState>()(
 
       addError: (error: AppError) => {
         set((state) => {
-          // Add unique ID to error to prevent React key conflicts
+          // Add unique ID to error to prevent React key conflicts, use provided ID if available
           const errorWithId = {
             ...error,
-            id: `${error.code}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            id: error.id || `${error.code}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
           };
           state.errors.push(errorWithId);
         });
