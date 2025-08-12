@@ -394,60 +394,6 @@ environment:
   - WHISPER_CACHE=/app/.cache/whisper
 ```
 
-## 🆚 Open Source vs Commercial Comparison
-
-### ✅ What's Included (Open Source)
-- **Local Whisper Transcription**: Privacy-first local processing with 4x performance improvement
-- **Hybrid Architecture**: Automatic fallback to OpenAI API for reliability
-- **GPU Acceleration**: CUDA support with automatic CPU fallback
-- **Multiple Model Sizes**: tiny/base/small/medium/large models (74MB to 1.5GB)
-- **AI Summarization**: GPT-4 powered content analysis and structured output
-- **Summary Editing**: Full editing capabilities with real-time markdown preview
-- **Export Options**: PDF and Markdown export with professional formatting
-- **Secure API Keys**: AES-256-GCM encrypted storage with local-only security
-- **Privacy Protection**: Stateless processing, no data collection or storage
-- **Professional Audio**: Custom AudioWorklet, noise reduction, hallucination filtering
-- **Real-time Analytics**: Compression ratios, word counts, processing statistics
-- **Configuration Management**: Runtime method selection and performance monitoring
-
-### ❌ What's NOT Included (Commercial Only)
-- **Student Management System**: Individual student profiles and progress tracking
-- **Multi-user Support**: Role-based access controls and administrative features  
-- **Institutional Features**: LMS integrations (Canvas, Moodle, Blackboard)
-- **Advanced AI Assistants**: Neurodiversity-specific personalization and PromptSage framework
-- **Webhook Integrations**: Real-time data sharing with institutional systems
-- **Enterprise Analytics**: Usage dashboards, outcome measurements, compliance reporting
-- **Professional Support**: 24/7 technical support and implementation services
-- **Advanced Security**: SOC 2, GDPR compliance tools, enterprise audit logging
-
-### 🎯 Perfect For
-
-**Individual Users**:
-- Students recording lectures or study sessions
-- Researchers conducting interviews or analyzing audio content
-- Content creators generating transcripts for videos or podcasts
-- Professionals creating meeting summaries and documentation
-
-**Small Organizations**:
-- Startups needing transcription without enterprise overhead
-- Non-profits with limited budgets but privacy requirements
-- Research labs requiring customizable transcription workflows
-- Development teams wanting to modify or extend functionality
-
-**Privacy-Conscious Users**:
-- Users requiring complete data control and local processing
-- Organizations with strict data sovereignty requirements  
-- Developers wanting transparent, auditable transcription tools
-- Users preferring bring-your-own-API-key architecture over subscriptions
-
-### 💡 Key Differentiators
-- **90% Cost Reduction**: Local processing eliminates most API costs
-- **Complete Privacy**: Audio never leaves your machine (local Whisper processing)
-- **Hybrid Reliability**: Best of local performance + cloud fallback
-- **Full Customization**: Open source allows modification for specific use cases
-- **No Vendor Lock-in**: Own your deployment, data, and processing pipeline
-- **Transparent Costs**: Only pay for AI summarization, not transcription
-- **Offline Capable**: Works without internet after initial model download
 
 ## 🔧 Troubleshooting Guide
 
@@ -607,20 +553,6 @@ cd python_backend && python -m uvicorn main:app --log-level debug 2>&1 | tee deb
 - Archived documentation available in `Archive/` folder for advanced configuration
 - Development guides and deployment scripts preserved for reference
 
-## 📊 Usage & Cost Estimates
-
-### OpenAI API Costs (Your Direct Costs)
-- **Local Whisper Transcription**: **$0.00** per minute (completely free!)
-- **GPT-4 Summarization**: ~$0.01-$0.05 per summary (depending on length)
-- **Whisper API Fallback**: $0.006 per minute (only when local processing fails)
-- **Example**: 1-hour lecture = ~$0.00 transcription + ~$0.03 summary = **$0.03 total**
-
-### Typical Usage Patterns (90% cost reduction)
-- **Student**: 10 hours/month = ~$0.30/month in OpenAI costs (vs $3.90)
-- **Researcher**: 40 hours/month = ~$1.20/month in OpenAI costs (vs $15.60)  
-- **Content Creator**: 20 hours/month = ~$0.60/month in OpenAI costs (vs $7.80)
-
-> 💰 **No Hidden Fees**: These are your only costs. No subscriptions, no per-user fees, no enterprise licensing.
 
 ## 📄 License & Legal
 
