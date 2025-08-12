@@ -348,10 +348,9 @@ def create_session_manager():
         'auto': TranscriptionMethod.AUTO
     }
     
-    transcription_method = method_map.get(
-        settings.TRANSCRIPTION_METHOD.lower(), 
-        TranscriptionMethod.LOCAL_FIRST
-    )
+    # Use configured transcription method with intelligent fallback
+    transcription_method = method_map.get(settings.TRANSCRIPTION_METHOD.lower(), TranscriptionMethod.LOCAL_FIRST)
+    logger.info(f"Using transcription method: {transcription_method.value} (configured as: {settings.TRANSCRIPTION_METHOD})")
     
     return SessionManager(
         enable_debug_audio=True,

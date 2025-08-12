@@ -1,0 +1,53 @@
+# NeuroBridge EDU - Grafana Data Source Configuration
+# Educational institution Prometheus data source with security settings
+
+apiVersion: 1
+
+datasources:
+  # Primary Prometheus data source for educational metrics
+  - name: NeuroBridge EDU Metrics
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    
+    # Educational institution settings
+    basicAuth: false
+    basicAuthUser: ""
+    basicAuthPassword: ""
+    withCredentials: false
+    
+    # Educational query settings
+    jsonData:
+      timeInterval: "15s"
+      queryTimeout: "60s"
+      httpMethod: "POST"
+      
+      # Educational custom headers
+      customQueryParameters: ""
+      
+      # Educational Prometheus settings
+      prometheusType: "Prometheus"
+      prometheusVersion: "2.48.0"
+      
+      # Educational caching
+      cacheLevel: "Low"
+      
+      # Educational exemplars
+      exemplarTraceIdDestinations:
+        - name: "Educational Traces"
+          datasourceUid: "educational_traces"
+          url: "http://jaeger:16686/trace/$${__value.raw}"
+    
+    # Educational security settings
+    secureJsonData:
+      httpHeaderValue1: "application/json"
+    
+    # Educational metadata
+    uid: neurobridge_prometheus
+    orgId: 1
+    version: 1
+    editable: true
+    
+    # Educational access control
+    readOnly: false

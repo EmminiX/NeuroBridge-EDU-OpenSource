@@ -1,0 +1,156 @@
+# NeuroBridge EDU - Pod Security Standards
+# Educational institution container security with CIS compliance
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neurobridge-backend
+  namespace: neurobridge-edu
+  labels:
+    app: neurobridge-edu
+    component: backend
+    security-context: restricted
+  annotations:
+    description: "Backend service account for educational compliance"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neurobridge-frontend
+  namespace: neurobridge-edu
+  labels:
+    app: neurobridge-edu
+    component: frontend
+    security-context: restricted
+  annotations:
+    description: "Frontend service account for educational web serving"
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: neurobridge-edu
+  name: neurobridge-backend-role
+  labels:
+    app: neurobridge-edu
+    component: backend
+    rbac-scope: namespace
+  annotations:
+    description: "Minimal RBAC permissions for backend educational operations"
+rules:
+# Allow reading own pod information for educational monitoring
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+  resourceNames: []
+# Allow reading configmaps for educational configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+  resourceNames: ["neurobridge-config"]
+# Allow reading secrets for educational API key management
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+  resourceNames: ["neurobridge-secrets"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: neurobridge-edu
+  name: neurobridge-frontend-role
+  labels:
+    app: neurobridge-edu
+    component: frontend
+    rbac-scope: namespace
+  annotations:
+    description: "Minimal RBAC permissions for frontend static serving"
+rules:
+# Allow reading own pod information
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+# Allow reading nginx configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get"]
+  resourceNames: ["nginx-config"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: neurobridge-backend-binding
+  namespace: neurobridge-edu
+  labels:
+    app: neurobridge-edu
+    component: backend
+    rbac-scope: namespace
+subjects:
+- kind: ServiceAccount
+  name: neurobridge-backend
+  namespace: neurobridge-edu
+roleRef:
+  kind: Role
+  name: neurobridge-backend-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: neurobridge-frontend-binding
+  namespace: neurobridge-edu
+  labels:
+    app: neurobridge-edu
+    component: frontend
+    rbac-scope: namespace
+subjects:
+- kind: ServiceAccount
+  name: neurobridge-frontend
+  namespace: neurobridge-edu
+roleRef:
+  kind: Role
+  name: neurobridge-frontend-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Pod Security Standards - Restricted Profile
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neurobridge-security-context
+  namespace: neurobridge-edu
+  labels:
+    app: neurobridge-edu
+    security-policy: pod-security
+  annotations:
+    description: "Educational institution pod security context configuration"
+data:
+  security-context.yaml: |
+    # Educational institution security context requirements
+    securityContext:
+      # Run as non-root user for educational security
+      runAsNonRoot: true
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+      
+      # Educational compliance security controls
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      
+      # Minimal capabilities for educational workloads
+      capabilities:
+        drop: ["ALL"]
+        add: ["DAC_OVERRIDE", "CHOWN"]  # Only for backend file operations
+      
+      # SELinux/AppArmor for educational environments
+      seLinuxOptions:
+        type: "spc_t"
+      
+      # Seccomp profile for educational security
+      seccompProfile:
+        type: "Localhost"
+        localhostProfile: "neurobridge-educational.json"

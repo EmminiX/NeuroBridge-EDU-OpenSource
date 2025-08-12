@@ -1,0 +1,151 @@
+# NeuroBridge EDU - Prometheus Configuration
+# Educational institution monitoring with compliance-focused metrics collection
+
+global:
+  scrape_interval: 15s      # Educational workload monitoring frequency
+  evaluation_interval: 15s  # Rule evaluation frequency
+  scrape_timeout: 10s       # Timeout for educational environment stability
+  
+  # Educational institution external labels
+  external_labels:
+    cluster: 'neurobridge-edu'
+    environment: 'production'
+    institution: 'educational'
+    compliance: 'ferpa-gdpr'
+
+# Educational alerting rules
+rule_files:
+  - "rules/neurobridge_educational_alerts.yml"
+  - "rules/performance_alerts.yml"
+  - "rules/security_alerts.yml"
+  - "rules/compliance_alerts.yml"
+
+# Educational alert manager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - 'alertmanager:9093'
+      timeout: 10s
+      path_prefix: /
+
+# Educational metrics collection targets
+scrape_configs:
+  # NeuroBridge EDU Backend - Educational transcription service
+  - job_name: 'neurobridge-backend'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['backend:3939']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: backend:3939
+    metric_relabel_configs:
+      # Educational metrics filtering
+      - source_labels: [__name__]
+        regex: '(neurobridge_.*|http_.*|whisper_.*|educational_.*)'
+        action: keep
+
+  # NeuroBridge EDU Frontend - Educational web interface
+  - job_name: 'neurobridge-frontend'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['frontend:8080']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+    metric_relabel_configs:
+      # Educational frontend metrics
+      - source_labels: [__name__]
+        regex: '(nginx_.*|http_.*|educational_.*)'
+        action: keep
+
+  # System Metrics - Educational infrastructure monitoring
+  - job_name: 'node-exporter'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['node-exporter:9100']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'educational-host'
+    metric_relabel_configs:
+      # Essential system metrics for educational monitoring
+      - source_labels: [__name__]
+        regex: '(node_cpu_.*|node_memory_.*|node_disk_.*|node_network_.*|node_filesystem_.*|node_load.*)'
+        action: keep
+
+  # Prometheus Self-Monitoring
+  - job_name: 'prometheus'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['localhost:9090']
+    metric_relabel_configs:
+      # Prometheus health metrics
+      - source_labels: [__name__]
+        regex: '(prometheus_.*|up)'
+        action: keep
+
+  # AlertManager Monitoring
+  - job_name: 'alertmanager'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['alertmanager:9093']
+    metric_relabel_configs:
+      # AlertManager metrics
+      - source_labels: [__name__]
+        regex: '(alertmanager_.*)'
+        action: keep
+
+  # Educational Custom Metrics via Pushgateway (if used)
+  - job_name: 'pushgateway'
+    scrape_interval: 30s
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']
+    metric_relabel_configs:
+      # Educational custom metrics
+      - source_labels: [__name__]
+        regex: '(educational_.*|student_.*|transcription_.*|whisper_.*)'
+        action: keep
+
+# Educational remote write configuration (optional for long-term storage)
+# remote_write:
+#   - url: "https://educational-metrics.example.edu/api/v1/write"
+#     headers:
+#       X-Institution-ID: "your-institution-id"
+#     queue_config:
+#       capacity: 10000
+#       max_shards: 10
+#       min_shards: 1
+#       max_samples_per_send: 2000
+#       batch_send_deadline: 5s
+#       min_backoff: 30ms
+#       max_backoff: 100ms
+
+# Educational storage configuration
+storage:
+  tsdb:
+    # 90 days retention for educational analytics
+    retention: "90d"
+    # 20GB max storage for educational environments
+    retention_size: "20GB"
+    # Optimize for educational workload patterns
+    min_block_duration: "2h"
+    max_block_duration: "25h"
+    # Educational compression settings
+    compression: "snappy"

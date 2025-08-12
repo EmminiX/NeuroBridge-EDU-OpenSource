@@ -1,0 +1,444 @@
+# NeuroBridge EDU - Production Deployment Pipeline
+# Educational institution CI/CD with security scanning and compliance validation
+
+name: Production Deployment
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+env:
+  # Educational registry configuration
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  
+  # Educational environment settings
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+  
+  # Educational compliance flags
+  SECURITY_SCAN_ENABLED: true
+  COMPLIANCE_CHECK_ENABLED: true
+  EDUCATIONAL_TESTING_ENABLED: true
+
+jobs:
+  # Educational Code Quality and Security
+  security-and-quality:
+    runs-on: ubuntu-latest
+    name: Security & Quality Analysis
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    
+    steps:
+      - name: 📥 Checkout Educational Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for educational security analysis
+      
+      # Educational dependency security scanning
+      - name: 🔍 Python Security Scan (Educational Backend)
+        uses: pypa/gh-action-pip-audit@v1.0.8
+        with:
+          inputs: python_backend/requirements.txt
+          format: sarif
+          output: python-security-report.sarif
+          
+      - name: 📤 Upload Python Security Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: python-security-report.sarif
+          category: python-security
+      
+      # Educational Node.js security scanning
+      - name: 🔍 Node.js Security Audit (Educational Frontend)
+        run: |
+          npm audit --audit-level moderate --json > npm-audit-report.json || true
+          
+      # Educational secret scanning
+      - name: 🔐 Educational Secret Scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+          
+      # Educational SAST scanning
+      - name: 🔍 CodeQL Educational Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python, javascript
+          queries: security-and-quality
+          
+      - name: 🔍 CodeQL Educational Scan
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python,javascript"
+          
+      # Educational Docker image security
+      - name: 🐳 Docker Security Scan Preparation
+        run: |
+          # Build optimized images for security scanning
+          docker build -f docker/Dockerfile.backend.optimized -t neurobridge/backend:security-scan .
+          docker build -f docker/Dockerfile.frontend.optimized -t neurobridge/frontend:security-scan .
+          
+      - name: 🔍 Docker Image Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'neurobridge/backend:security-scan'
+          format: 'sarif'
+          output: 'docker-security-report.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          
+      - name: 📤 Upload Docker Security Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: docker-security-report.sarif
+          category: docker-security
+
+  # Educational Testing Suite
+  educational-testing:
+    runs-on: ubuntu-latest
+    name: Educational Testing & Validation
+    needs: security-and-quality
+    
+    strategy:
+      matrix:
+        test-suite: [unit, integration, security, performance, compliance]
+    
+    steps:
+      - name: 📥 Checkout Educational Repository
+        uses: actions/checkout@v4
+      
+      # Educational Python testing environment
+      - name: 🐍 Setup Python Educational Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          
+      - name: 📦 Install Educational Python Dependencies
+        run: |
+          cd python_backend
+          pip install --no-cache-dir -r requirements-dev.txt
+          pip install pytest pytest-cov pytest-mock pytest-asyncio
+          
+      # Educational Node.js testing environment
+      - name: 🟢 Setup Node.js Educational Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📦 Install Educational Frontend Dependencies
+        run: npm ci --silent
+        
+      # Educational test execution
+      - name: 🧪 Run Educational Test Suite - ${{ matrix.test-suite }}
+        run: |
+          case "${{ matrix.test-suite }}" in
+            unit)
+              echo "Running educational unit tests..."
+              cd python_backend && python run_tests.py --suite unit --coverage --educational
+              npm run test -- --coverage --educational
+              ;;
+            integration)
+              echo "Running educational integration tests..."
+              cd python_backend && python run_tests.py --suite integration --educational
+              ;;
+            security)
+              echo "Running educational security tests..."
+              cd python_backend && python run_tests.py --suite security --educational
+              ;;
+            performance)
+              echo "Running educational performance benchmarks..."
+              cd python_backend && python run_tests.py --suite performance --educational
+              ;;
+            compliance)
+              echo "Running educational compliance validation..."
+              cd python_backend && python run_tests.py --suite compliance --ferpa --gdpr
+              ;;
+          esac
+          
+      # Educational test reporting
+      - name: 📊 Educational Test Results
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Educational Tests - ${{ matrix.test-suite }}
+          path: '**/test-results-*.xml'
+          reporter: java-junit
+          
+      - name: 📈 Educational Coverage Report
+        if: matrix.test-suite == 'unit'
+        uses: codecov/codecov-action@v3
+        with:
+          flags: educational
+          name: educational-coverage
+          
+  # Educational Build and Container Creation
+  build-educational-containers:
+    runs-on: ubuntu-latest
+    name: Build Educational Containers
+    needs: educational-testing
+    outputs:
+      backend-image: ${{ steps.backend-meta.outputs.tags }}
+      frontend-image: ${{ steps.frontend-meta.outputs.tags }}
+      backend-digest: ${{ steps.backend-build.outputs.digest }}
+      frontend-digest: ${{ steps.frontend-build.outputs.digest }}
+    
+    steps:
+      - name: 📥 Checkout Educational Repository
+        uses: actions/checkout@v4
+        
+      - name: 🐳 Setup Docker Buildx for Educational Build
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+            
+      - name: 🔐 Educational Registry Login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      # Educational backend container
+      - name: 📋 Educational Backend Metadata
+        id: backend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=educational-latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=NeuroBridge EDU Backend
+            org.opencontainers.image.description=Educational transcription backend
+            org.opencontainers.image.vendor=NeuroBridge EDU
+            org.opencontainers.image.licenses=Apache-2.0
+            edu.compliance=FERPA-GDPR
+            edu.security-scanned=true
+            
+      - name: 🏗️ Build Educational Backend Container
+        id: backend-build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.backend.optimized
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+          
+      # Educational frontend container  
+      - name: 📋 Educational Frontend Metadata
+        id: frontend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=educational-latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=NeuroBridge EDU Frontend
+            org.opencontainers.image.description=Educational transcription frontend
+            org.opencontainers.image.vendor=NeuroBridge EDU
+            org.opencontainers.image.licenses=Apache-2.0
+            edu.compliance=FERPA-GDPR
+            edu.security-scanned=true
+            
+      - name: 🏗️ Build Educational Frontend Container
+        id: frontend-build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.frontend.optimized
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+  # Educational Container Security Validation
+  container-security:
+    runs-on: ubuntu-latest
+    name: Educational Container Security
+    needs: build-educational-containers
+    if: github.event_name != 'pull_request'
+    
+    strategy:
+      matrix:
+        image: [backend, frontend]
+    
+    steps:
+      - name: 🔍 Educational Container Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-educational-containers.outputs[format('{0}-image', matrix.image)] }}
+          format: 'json'
+          output: '${{ matrix.image }}-vulnerability-report.json'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          
+      - name: 📊 Educational Security Report
+        run: |
+          echo "### Educational ${{ matrix.image }} Security Report" >> $GITHUB_STEP_SUMMARY
+          jq -r '.Results[]? | select(.Vulnerabilities) | .Vulnerabilities[] | "- \(.VulnerabilityID): \(.Severity) - \(.Title)"' ${{ matrix.image }}-vulnerability-report.json >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          
+      - name: ❌ Educational Security Gate
+        run: |
+          CRITICAL=$(jq -r '[.Results[]? | select(.Vulnerabilities) | .Vulnerabilities[] | select(.Severity=="CRITICAL")] | length' ${{ matrix.image }}-vulnerability-report.json)
+          HIGH=$(jq -r '[.Results[]? | select(.Vulnerabilities) | .Vulnerabilities[] | select(.Severity=="HIGH")] | length' ${{ matrix.image }}-vulnerability-report.json)
+          
+          echo "Educational Security Summary for ${{ matrix.image }}:"
+          echo "- Critical vulnerabilities: $CRITICAL"
+          echo "- High vulnerabilities: $HIGH"
+          
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "❌ Educational deployment blocked: Critical vulnerabilities found"
+            exit 1
+          fi
+          
+          if [ "$HIGH" -gt 5 ]; then
+            echo "❌ Educational deployment blocked: Too many high severity vulnerabilities ($HIGH > 5)"
+            exit 1
+          fi
+          
+          echo "✅ Educational security gate passed"
+
+  # Educational Production Deployment
+  deploy-educational-production:
+    runs-on: ubuntu-latest
+    name: Educational Production Deployment
+    needs: [build-educational-containers, container-security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: 
+      name: production
+      url: https://app.neurobridge.edu
+    
+    steps:
+      - name: 📥 Checkout Educational Deployment Config
+        uses: actions/checkout@v4
+        
+      - name: ⚙️ Setup Educational Kubernetes
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.4'
+          
+      - name: 🔐 Educational Cluster Authentication
+        run: |
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+          kubectl config current-context
+          
+      - name: 🚀 Educational Production Deployment
+        env:
+          KUBECONFIG: kubeconfig
+          BACKEND_IMAGE: ${{ needs.build-educational-containers.outputs.backend-image }}
+          FRONTEND_IMAGE: ${{ needs.build-educational-containers.outputs.frontend-image }}
+        run: |
+          echo "🏫 Deploying to Educational Production Environment"
+          
+          # Update educational deployment images
+          kubectl set image deployment/neurobridge-backend -n neurobridge-edu \
+            backend=$BACKEND_IMAGE
+          kubectl set image deployment/neurobridge-frontend -n neurobridge-edu \
+            frontend=$FRONTEND_IMAGE
+            
+          # Educational deployment verification
+          kubectl rollout status deployment/neurobridge-backend -n neurobridge-edu --timeout=300s
+          kubectl rollout status deployment/neurobridge-frontend -n neurobridge-edu --timeout=300s
+          
+          # Educational health checks
+          echo "🔍 Educational Health Check..."
+          kubectl wait --for=condition=available --timeout=300s deployment/neurobridge-backend -n neurobridge-edu
+          kubectl wait --for=condition=available --timeout=300s deployment/neurobridge-frontend -n neurobridge-edu
+          
+          echo "✅ Educational Production Deployment Complete"
+          
+      # Educational deployment notification
+      - name: 📧 Educational Deployment Notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#neurobridge-deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          custom_payload: |
+            {
+              "text": "🏫 Educational Production Deployment",
+              "attachments": [{
+                "color": "${{ job.status }}" === "success" ? "good" : "danger",
+                "fields": [{
+                  "title": "Educational Environment",
+                  "value": "Production",
+                  "short": true
+                }, {
+                  "title": "Images Deployed",
+                  "value": "Backend: `${{ needs.build-educational-containers.outputs.backend-image }}`\nFrontend: `${{ needs.build-educational-containers.outputs.frontend-image }}`",
+                  "short": false
+                }, {
+                  "title": "Educational Compliance",
+                  "value": "✅ FERPA/GDPR Validated",
+                  "short": true
+                }]
+              }]
+            }
+
+  # Educational Post-Deployment Validation
+  post-deployment-validation:
+    runs-on: ubuntu-latest
+    name: Educational Post-Deployment Tests
+    needs: deploy-educational-production
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: 📥 Checkout Educational Tests
+        uses: actions/checkout@v4
+        
+      - name: 🧪 Educational Production Smoke Tests
+        run: |
+          echo "🔍 Running Educational Production Smoke Tests..."
+          
+          # Educational endpoint validation
+          curl -f https://app.neurobridge.edu/health || exit 1
+          curl -f https://api.neurobridge.edu/health || exit 1
+          
+          echo "✅ Educational smoke tests passed"
+          
+      - name: 📊 Educational Performance Validation
+        run: |
+          echo "📈 Educational Performance Validation..."
+          
+          # Basic performance check for educational workloads
+          response_time=$(curl -o /dev/null -s -w '%{time_total}\n' https://app.neurobridge.edu/)
+          
+          if (( $(echo "$response_time > 2.0" | bc -l) )); then
+            echo "❌ Educational performance degraded: ${response_time}s response time"
+            exit 1
+          fi
+          
+          echo "✅ Educational performance validated: ${response_time}s response time"

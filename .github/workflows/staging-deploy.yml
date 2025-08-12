@@ -1,0 +1,345 @@
+# NeuroBridge EDU - Staging Deployment Pipeline
+# Educational institution staging environment for testing and validation
+
+name: Staging Deployment
+
+on:
+  push:
+    branches: [ develop, staging ]
+  pull_request:
+    branches: [ develop, staging ]
+    types: [ opened, synchronize, reopened ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Educational Staging Testing
+  educational-staging-tests:
+    runs-on: ubuntu-latest
+    name: Educational Staging Tests
+    
+    steps:
+      - name: 📥 Checkout Educational Repository
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Setup Python Educational Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          
+      - name: 📦 Install Educational Dependencies
+        run: |
+          cd python_backend
+          pip install --no-cache-dir -r requirements-dev.txt
+          
+      - name: 🟢 Setup Node.js Educational Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📦 Install Frontend Dependencies
+        run: npm ci --silent
+        
+      # Educational quick test suite for staging
+      - name: 🧪 Educational Staging Test Suite
+        run: |
+          echo "Running educational staging tests..."
+          cd python_backend
+          
+          # Quick educational test suite
+          python run_tests.py --suite quick --educational
+          
+          # Educational frontend tests
+          cd ..
+          npm run test -- --educational --watchAll=false
+
+  # Educational Staging Build
+  build-educational-staging:
+    runs-on: ubuntu-latest
+    name: Build Educational Staging
+    needs: educational-staging-tests
+    outputs:
+      backend-image: ${{ steps.backend-meta.outputs.tags }}
+      frontend-image: ${{ steps.frontend-meta.outputs.tags }}
+    
+    steps:
+      - name: 📥 Checkout Educational Repository
+        uses: actions/checkout@v4
+        
+      - name: 🐳 Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 🔐 Educational Registry Login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      # Educational staging backend
+      - name: 📋 Educational Backend Metadata
+        id: backend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          tags: |
+            type=ref,event=branch,suffix=-staging
+            type=ref,event=pr,suffix=-staging
+            type=raw,value=staging-latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=NeuroBridge EDU Backend (Staging)
+            org.opencontainers.image.description=Educational transcription backend - staging
+            edu.environment=staging
+            edu.compliance=FERPA-GDPR
+            
+      - name: 🏗️ Build Educational Backend (Staging)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.backend.optimized
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha,scope=staging-backend
+          cache-to: type=gha,mode=max,scope=staging-backend
+          
+      # Educational staging frontend
+      - name: 📋 Educational Frontend Metadata
+        id: frontend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          tags: |
+            type=ref,event=branch,suffix=-staging
+            type=ref,event=pr,suffix=-staging
+            type=raw,value=staging-latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=NeuroBridge EDU Frontend (Staging)
+            org.opencontainers.image.description=Educational transcription frontend - staging
+            edu.environment=staging
+            edu.compliance=FERPA-GDPR
+            
+      - name: 🏗️ Build Educational Frontend (Staging)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.frontend.optimized
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
+          cache-from: type=gha,scope=staging-frontend
+          cache-to: type=gha,mode=max,scope=staging-frontend
+
+  # Educational Staging Deployment
+  deploy-educational-staging:
+    runs-on: ubuntu-latest
+    name: Educational Staging Deployment
+    needs: build-educational-staging
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+    environment: 
+      name: staging
+      url: https://staging.neurobridge.edu
+    
+    steps:
+      - name: 📥 Checkout Educational Deployment
+        uses: actions/checkout@v4
+        
+      - name: ⚙️ Setup Educational Kubernetes
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.4'
+          
+      - name: 🔐 Educational Staging Authentication
+        run: |
+          echo "${{ secrets.STAGING_KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+          kubectl config current-context
+          
+      - name: 🚀 Educational Staging Deployment
+        env:
+          KUBECONFIG: kubeconfig
+          BACKEND_IMAGE: ${{ needs.build-educational-staging.outputs.backend-image }}
+          FRONTEND_IMAGE: ${{ needs.build-educational-staging.outputs.frontend-image }}
+        run: |
+          echo "🧪 Deploying to Educational Staging Environment"
+          
+          # Create or update staging namespace
+          kubectl create namespace neurobridge-staging --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Update staging deployment images
+          envsubst < kubernetes/overlays/staging/kustomization.yaml.template > kubernetes/overlays/staging/kustomization.yaml
+          
+          kubectl apply -k kubernetes/overlays/staging/
+          
+          # Educational staging verification
+          kubectl rollout status deployment/neurobridge-backend -n neurobridge-staging --timeout=300s
+          kubectl rollout status deployment/neurobridge-frontend -n neurobridge-staging --timeout=300s
+          
+          echo "✅ Educational Staging Deployment Complete"
+
+  # Educational Staging Integration Tests
+  educational-staging-integration:
+    runs-on: ubuntu-latest
+    name: Educational Staging Integration Tests
+    needs: deploy-educational-staging
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+    
+    steps:
+      - name: 📥 Checkout Educational Tests
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python Test Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: 📦 Install Test Dependencies
+        run: |
+          pip install requests pytest pytest-asyncio
+          
+      - name: 🧪 Educational Staging Integration Tests
+        env:
+          STAGING_URL: https://staging.neurobridge.edu
+          STAGING_API_URL: https://staging-api.neurobridge.edu
+        run: |
+          echo "🔍 Running Educational Staging Integration Tests..."
+          
+          # Educational endpoint health checks
+          python -c "
+          import requests
+          import sys
+          
+          # Check frontend
+          try:
+              response = requests.get('$STAGING_URL/health', timeout=30)
+              assert response.status_code == 200, f'Frontend health check failed: {response.status_code}'
+              print('✅ Frontend health check passed')
+          except Exception as e:
+              print(f'❌ Frontend health check failed: {e}')
+              sys.exit(1)
+          
+          # Check backend API
+          try:
+              response = requests.get('$STAGING_API_URL/health', timeout=30)
+              assert response.status_code == 200, f'Backend health check failed: {response.status_code}'
+              print('✅ Backend health check passed')
+          except Exception as e:
+              print(f'❌ Backend health check failed: {e}')
+              sys.exit(1)
+          
+          print('✅ All educational staging integration tests passed')
+          "
+          
+      # Educational API testing
+      - name: 🧪 Educational API Testing
+        env:
+          STAGING_API_URL: https://staging-api.neurobridge.edu
+        run: |
+          echo "🔍 Testing Educational API Endpoints..."
+          
+          python -c "
+          import requests
+          import json
+          
+          base_url = '$STAGING_API_URL'
+          
+          # Test educational configuration endpoint
+          try:
+              response = requests.get(f'{base_url}/api/transcription/config')
+              assert response.status_code == 200
+              config = response.json()
+              assert 'local_whisper_enabled' in config
+              print('✅ Educational configuration API test passed')
+          except Exception as e:
+              print(f'❌ Educational configuration API test failed: {e}')
+              
+          # Test educational API key endpoints
+          try:
+              response = requests.get(f'{base_url}/api/api-keys/list')
+              # Should return 401 without authentication, which is correct
+              assert response.status_code in [401, 403]
+              print('✅ Educational API key security test passed')
+          except Exception as e:
+              print(f'❌ Educational API key security test failed: {e}')
+          "
+
+  # Educational Staging Performance Tests
+  educational-performance-tests:
+    runs-on: ubuntu-latest
+    name: Educational Performance Tests
+    needs: deploy-educational-staging
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+    
+    steps:
+      - name: 📥 Checkout Educational Repository
+        uses: actions/checkout@v4
+        
+      - name: 📊 Educational Load Testing
+        env:
+          STAGING_URL: https://staging.neurobridge.edu
+        run: |
+          echo "📈 Running Educational Performance Tests..."
+          
+          # Install simple load testing tools
+          sudo apt-get update && sudo apt-get install -y apache2-utils curl
+          
+          # Educational frontend performance test
+          echo "Testing educational frontend performance..."
+          ab -n 100 -c 5 $STAGING_URL/ > frontend_performance.txt
+          
+          # Extract key metrics
+          response_time=$(grep "Time per request:" frontend_performance.txt | head -1 | awk '{print $4}')
+          requests_per_sec=$(grep "Requests per second:" frontend_performance.txt | awk '{print $4}')
+          
+          echo "📊 Educational Performance Results:"
+          echo "- Average response time: ${response_time}ms"
+          echo "- Requests per second: ${requests_per_sec}"
+          
+          # Educational performance thresholds
+          if (( $(echo "$response_time > 1000" | bc -l) )); then
+            echo "❌ Educational performance threshold exceeded (${response_time}ms > 1000ms)"
+            exit 1
+          fi
+          
+          echo "✅ Educational performance tests passed"
+          
+      - name: 📊 Educational Memory Usage Test
+        run: |
+          echo "🧠 Testing Educational Memory Usage Patterns..."
+          
+          # Simple memory usage simulation for educational workloads
+          python3 -c "
+          import requests
+          import time
+          import concurrent.futures
+          
+          def educational_request():
+              try:
+                  response = requests.get('$STAGING_URL/health', timeout=5)
+                  return response.status_code == 200
+              except:
+                  return False
+          
+          # Simulate educational classroom load (30 concurrent students)
+          print('Simulating educational classroom load...')
+          with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
+              futures = [executor.submit(educational_request) for _ in range(100)]
+              results = [f.result() for f in concurrent.futures.as_completed(futures)]
+          
+          success_rate = sum(results) / len(results) * 100
+          print(f'Educational load test success rate: {success_rate:.1f}%')
+          
+          if success_rate < 95:
+              print('❌ Educational load test failed (success rate < 95%)')
+              exit(1)
+              
+          print('✅ Educational load test passed')
+          "

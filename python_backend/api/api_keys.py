@@ -3,9 +3,10 @@ API Key Management Endpoints
 Secure storage and management of user-provided API keys
 """
 
+import re
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from services.api_key_manager import get_api_key_manager, APIKeyManager
 from utils.logger import get_logger
@@ -17,8 +18,42 @@ logger = get_logger("api_keys")
 class APIKeyCreateRequest(BaseModel):
     """Request schema for storing an API key"""
     provider: str = Field(..., description="API provider name (e.g., 'openai')")
-    api_key: str = Field(..., min_length=10, description="The API key to store")
-    label: Optional[str] = Field(None, description="Optional label for the key")
+    api_key: str = Field(..., min_length=10, max_length=200, description="The API key to store")
+    label: Optional[str] = Field(None, max_length=50, description="Optional label for the key")
+    
+    @validator('api_key')
+    def validate_api_key_format(cls, v, values):
+        """Validate API key format based on provider"""
+        if not v:
+            raise ValueError("API key is required")
+        
+        # Get provider from values (may be None if validation order differs)
+        provider = values.get('provider', '').lower() if 'provider' in values else ''
+        
+        # OpenAI API key validation (matches frontend validation)
+        if provider == 'openai' or v.startswith('sk-'):
+            if not re.match(r'^sk-[A-Za-z0-9_\-]{20,}$', v):
+                raise ValueError('Invalid OpenAI API key format (should start with sk- followed by at least 20 characters)')
+        
+        # General validation for any API key
+        if len(v) > 200:
+            raise ValueError('API key is too long (max 200 characters)')
+        
+        if len(v) < 10:
+            raise ValueError('API key is too short (min 10 characters)')
+        
+        return v
+    
+    @validator('label')
+    def validate_label(cls, v):
+        """Validate label format"""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                raise ValueError("Label cannot be empty")
+            if len(v) > 50:
+                raise ValueError("Label must be 50 characters or less")
+        return v
 
 
 class APIKeyResponse(BaseModel):

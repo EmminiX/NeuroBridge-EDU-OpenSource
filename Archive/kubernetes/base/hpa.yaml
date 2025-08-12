@@ -1,0 +1,136 @@
+# NeuroBridge EDU - Horizontal Pod Autoscaler
+# Educational institution workload patterns with auto-scaling
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: neurobridge-backend-hpa
+  namespace: neurobridge-edu
+  labels:
+    app: neurobridge-edu
+    component: backend
+    educational-compliance: required
+  annotations:
+    description: "Educational workload auto-scaling based on morning lectures, study sessions"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neurobridge-backend
+  
+  # Educational scaling parameters
+  minReplicas: 2    # Minimum availability for educational continuity
+  maxReplicas: 10   # Maximum for peak educational workloads
+  
+  # Educational scaling metrics
+  metrics:
+  # CPU-based scaling for lecture rush hours (8-10 AM)
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  
+  # Memory-based scaling for Whisper model loading
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  
+  # Custom metric for educational transcription requests
+  - type: Pods
+    pods:
+      metric:
+        name: transcription_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "10"
+  
+  # Educational scaling behavior
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60   # Quick scale-up for lecture start
+      policies:
+      - type: Percent
+        value: 100                     # Double pods for lecture rush
+        periodSeconds: 60
+      - type: Pods
+        value: 2                       # Add 2 pods minimum
+        periodSeconds: 60
+      selectPolicy: Max
+    
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Gradual scale-down after classes
+      policies:
+      - type: Percent
+        value: 50                      # Reduce by 50% gradually
+        periodSeconds: 300
+      - type: Pods
+        value: 1                       # Remove 1 pod at a time
+        periodSeconds: 300
+      selectPolicy: Min
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: neurobridge-frontend-hpa
+  namespace: neurobridge-edu
+  labels:
+    app: neurobridge-edu
+    component: frontend
+    educational-compliance: required
+  annotations:
+    description: "Frontend auto-scaling for educational web traffic patterns"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neurobridge-frontend
+  
+  # Frontend scaling parameters for educational load
+  minReplicas: 3    # High availability for student access
+  maxReplicas: 8    # Reasonable upper limit for static content
+  
+  metrics:
+  # CPU scaling for educational web traffic
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  
+  # Memory scaling for nginx processes
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  
+  # Frontend scaling behavior optimized for web traffic
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 30
+      - type: Pods
+        value: 2
+        periodSeconds: 30
+      selectPolicy: Max
+    
+    scaleDown:
+      stabilizationWindowSeconds: 180
+      policies:
+      - type: Percent
+        value: 25
+        periodSeconds: 180
+      - type: Pods
+        value: 1
+        periodSeconds: 180
+      selectPolicy: Min

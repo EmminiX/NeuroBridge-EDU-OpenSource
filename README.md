@@ -65,6 +65,8 @@ npm run dev:frontend
 - **API Documentation**: http://localhost:3939/docs (Interactive API docs)
 - **Backend Health**: http://localhost:3939/health (System status)
 
+> 📁 **Clean Codebase**: This repository has been optimized for clarity. Additional documentation, deployment guides, and development tools are preserved in the `Archive/` folder for reference.
+
 ## 🏗️ Architecture Overview
 
 NeuroBridge EDU uses a **privacy-first, stateless architecture** with professional-grade audio processing and secure API key management:
@@ -179,10 +181,11 @@ npm run build              # Production build
 npm run preview            # Preview build
 
 # Code quality
-npm run lint               # Lint TypeScript/React
-npm run lint:fix           # Auto-fix linting issues
-npm run test               # Run tests
+npm run build              # TypeScript compilation check (recommended)
+npm run test               # Run tests (requires Jest setup)
 npm run test:watch         # Watch mode testing
+
+# Note: Linting may require additional dev dependency installation
 
 # Backend development
 cd python_backend
@@ -192,16 +195,13 @@ python -m uvicorn main:app --reload --port 3939
 ### Docker Development
 ```bash
 # Full application (CPU - includes local Whisper)
-npm run docker:compose     # Build and run with base model
-npm run docker:logs        # View logs
-npm run docker:stop        # Stop containers
-npm run docker:clean       # Clean up
+docker-compose up -d --build  # Build and run with base model
+docker-compose logs -f        # View logs
+docker-compose down          # Stop containers
+docker-compose down -v && docker system prune -f  # Clean up
 
 # GPU acceleration (faster local transcription)
 docker-compose -f docker-compose.gpu.yml up -d --build
-
-# Development mode with hot reload
-npm run docker:compose:dev
 ```
 
 ## 🎯 Complete User Workflow
@@ -369,6 +369,8 @@ CORS_ORIGINS=http://localhost:3131,http://localhost:3939
 ```bash
 docker-compose up -d --build
 # Includes: base model, CPU processing, automatic model download
+# View logs: docker-compose logs -f
+# Stop: docker-compose down
 ```
 
 **GPU-Accelerated Deployment**:
@@ -594,8 +596,12 @@ cd python_backend && python -m uvicorn main:app --log-level debug 2>&1 | tee deb
 
 **Community Support**
 - Check GitHub Issues for similar problems
-- Review CLAUDE.md for technical implementation details
+- Review [CLAUDE.md](CLAUDE.md) for technical implementation details
 - Join discussions for community help and troubleshooting tips
+
+**Additional Resources**
+- Archived documentation available in `Archive/` folder for advanced configuration
+- Development guides and deployment scripts preserved for reference
 
 ## 📊 Usage & Cost Estimates
 
@@ -614,12 +620,42 @@ cd python_backend && python -m uvicorn main:app --log-level debug 2>&1 | tee deb
 
 ## 📄 License & Legal
 
-**MIT License** - Free for personal and commercial use. See LICENSE file for details.
+### NeuroBridge EDU Non-Commercial License
+
+This project is open source for **personal, educational, and non-commercial use only**. 
+
+**✅ PERMITTED USES:**
+- Personal use and learning
+- Educational use in non-commercial institutions  
+- Academic research and publication
+- Non-profit organization use
+- Open source contributions and modifications
+
+**❌ COMMERCIAL USE RESTRICTED:**
+Commercial use requires explicit written permission. This includes:
+- Using the software to provide paid services
+- Incorporating into commercial products
+- Commercial research or development
+- Any use generating revenue or commercial advantage
+
+**📧 COMMERCIAL LICENSING:**
+For commercial use, contact: **neurobridgeedu@gmail.com**
+Website: **https://neurobridgeedu.eu**
 
 ### Third-Party Services
 - **OpenAI**: Requires separate account and API key ([Terms](https://openai.com/terms))
 - **Audio Processing**: Uses Web Audio API (browser standard)
 - **No Data Sharing**: Your transcriptions never leave your machine except to OpenAI directly
+
+### Attribution
+When using this software in academic publications or public works, please cite:
+```
+NeuroBridge EDU - AI-Powered Educational Transcription Platform
+https://neurobridgeedu.eu
+Contact: neurobridgeedu@gmail.com
+```
+
+See [LICENSE](LICENSE) file for complete terms and conditions.
 
 ## 🤝 Contributing & Development
 
@@ -638,6 +674,7 @@ cd python_backend && python -m uvicorn main:app --log-level debug 2>&1 | tee deb
 - **API Documentation**: Visit http://localhost:3939/docs when running
 - **Component Guide**: Frontend components in `src/components/`
 - **Testing**: Run `cd python_backend && python run_tests.py --suite all`
+- **Archived Docs**: Additional guides available in `Archive/docs/` for platform-specific setups
 
 ### Areas for Contribution
 - **🔊 Audio Processing**: Enhanced noise reduction and voice activity detection

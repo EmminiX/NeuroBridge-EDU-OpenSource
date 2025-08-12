@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/utils/cn';
+import { decodeError, toAppError } from '@/utils/errorHandler';
 import type { ApiKeyCreateRequest, ApiKey } from '@/types';
 
 interface ApiKeyFormData {
@@ -108,7 +109,7 @@ const Settings: React.FC = () => {
     return true;
   };
 
-  // Form submission handler
+  // Form submission handler with enhanced error handling
   const onSubmit = async (data: ApiKeyFormData) => {
     try {
       const keyData: ApiKeyCreateRequest = {
@@ -124,7 +125,19 @@ const Settings: React.FC = () => {
       setShowAddForm(false);
       
     } catch (error) {
-      console.error('Failed to add API key:', error);
+      // Enhanced error handling with user-friendly messages
+      const apiError = decodeError(error);
+      const appError = toAppError(apiError, 'Adding API key');
+      
+      // Log technical details for debugging
+      console.error('Failed to add API key:', {
+        original: error,
+        decoded: apiError,
+        userMessage: appError.message
+      });
+      
+      // The error is already added to the store by addApiKey, 
+      // but we could show additional UI feedback here if needed
     }
   };
 

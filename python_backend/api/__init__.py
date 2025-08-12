@@ -16,7 +16,7 @@ def register_routes(app: FastAPI) -> None:
     # Transcription endpoints
     app.include_router(
         transcription_router,
-        prefix="/api/transcribe",
+        prefix="/api/transcription",
         tags=["transcription"]
     )
     
@@ -30,7 +30,7 @@ def register_routes(app: FastAPI) -> None:
     # API key management endpoints
     app.include_router(
         api_keys_router,
-        prefix="/api/keys",
+        prefix="/api/api-keys",
         tags=["api-keys"]
     )
     

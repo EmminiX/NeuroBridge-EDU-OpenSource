@@ -1,17 +1,48 @@
-MIT License
+NeuroBridge EDU Non-Commercial Open Source License
 
-Copyright (c) 2024 NeuroBridge EDU
+Copyright (c) 2025 NeuroBridge EDU
+Contact: neurobridgeedu@gmail.com
+Website: https://neurobridgeedu.eu
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+in the Software without restriction for non-commercial purposes, including 
+without limitation the rights to use, copy, modify, merge, publish, distribute, 
+sublicense, and/or sell copies of the Software for personal, educational, or 
+research purposes, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+NON-COMMERCIAL USE RESTRICTION:
+Commercial use of this software is strictly prohibited without explicit written 
+permission from NeuroBridge EDU. Commercial use includes but is not limited to:
+- Using the software to provide paid services
+- Incorporating the software into commercial products
+- Using the software in commercial research or development
+- Any use that generates revenue or commercial advantage
 
+PERMITTED USES:
+- Personal use and learning
+- Educational use in non-commercial institutions
+- Academic research and publication
+- Non-profit organization use
+- Open source contributions and modifications
+
+COMMERCIAL LICENSE AVAILABLE:
+For commercial use, please contact neurobridgeedu@gmail.com to obtain a 
+commercial license.
+
+CONDITIONS:
+1. The above copyright notice and this permission notice shall be included in 
+   all copies or substantial portions of the Software.
+
+2. Any modifications or derivative works must:
+   - Retain this license
+   - Clearly indicate changes made
+   - Include proper attribution to the original work
+
+3. Redistributions must include this license and maintain the non-commercial 
+   restriction.
+
+DISCLAIMER:
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,3 +50,18 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+ATTRIBUTION:
+When using this software in academic publications, presentations, or other 
+public works, please cite:
+
+NeuroBridge EDU - AI-Powered Educational Transcription Platform
+https://neurobridgeedu.eu
+Contact: neurobridgeedu@gmail.com
+
+THIRD-PARTY LICENSES:
+This software uses third-party libraries and components that are subject to 
+their own licenses. See the respective package.json, requirements.txt, and 
+documentation for details on third-party licenses.
+
+Last Updated: January 2025

@@ -33,7 +33,7 @@ services:
       - PORT=3939
       - LOG_LEVEL=INFO
       - DATABASE_PATH=/app/data/neurobridge.db
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # OPENAI_API_KEY removed - use Settings UI to add API keys
       - CORS_ORIGINS=http://localhost:3131,http://localhost:3939,http://localhost:8000
       # Local Whisper configuration for CPU deployment
       - LOCAL_WHISPER_ENABLED=true

@@ -67,7 +67,9 @@ class LocalWhisperTranscriber:
         from config import settings
         
         self.model_size = model_size
-        self.device = device or settings.LOCAL_WHISPER_DEVICE or self._detect_device()
+        # Force CPU device to avoid MPS compatibility issues
+        self.device = "cpu"
+        logger.info(f"Forcing LOCAL_WHISPER_DEVICE to 'cpu' (settings.LOCAL_WHISPER_DEVICE was: {settings.LOCAL_WHISPER_DEVICE})")
         self.model: Optional[WhisperModel] = None
         self.audio_processor = AudioProcessor()
         self.hallucination_regex = [re.compile(pattern, re.IGNORECASE) for pattern in self.HALLUCINATION_PATTERNS]
@@ -153,8 +155,8 @@ class LocalWhisperTranscriber:
         Returns:
             Transcription result with metadata
         """
-        if not TORCH_AVAILABLE or self.model is None:
-            logger.error("Local Whisper not available - cannot transcribe chunk")
+        if not TORCH_AVAILABLE:
+            logger.error("PyTorch/faster-whisper dependencies not available")
             return {
                 'success': False,
                 'text': '',
@@ -217,7 +219,6 @@ class LocalWhisperTranscriber:
                     temperature=0.0,  # Deterministic output
                     compression_ratio_threshold=2.4,
                     log_prob_threshold=-1.0,
-                    no_captions_threshold=0.6,
                     condition_on_previous_text=False  # Reduce hallucinations
                 )
             )
@@ -326,7 +327,6 @@ class LocalWhisperTranscriber:
                     temperature=(0.0, 0.2, 0.4, 0.6, 0.8),  # Temperature fallback
                     compression_ratio_threshold=2.4,
                     log_prob_threshold=-1.0,
-                    no_captions_threshold=0.6,
                     condition_on_previous_text=False,
                     word_timestamps=True  # Get word-level timing
                 )

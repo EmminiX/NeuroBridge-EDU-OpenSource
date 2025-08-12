@@ -31,7 +31,7 @@ class HybridWhisperTranscriber:
         self, 
         local_model_size: str = "base",
         method: TranscriptionMethod = TranscriptionMethod.LOCAL_FIRST,
-        local_timeout: float = 30.0,
+        local_timeout: float = 120.0,  # Increased timeout for initial model loading
         api_timeout: float = 60.0
     ):
         """

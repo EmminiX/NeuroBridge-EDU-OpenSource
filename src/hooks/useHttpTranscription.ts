@@ -66,7 +66,7 @@ class HttpTranscriptionManager {
 
     try {
       // Start transcription session via HTTP
-      const response = await fetch(`${API_BASE_URL}/api/transcribe/start`, {
+      const response = await fetch(`${API_BASE_URL}/api/transcription/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ class HttpTranscriptionManager {
       throw new Error('No session ID available for SSE connection');
     }
 
-    const sseUrl = `${API_BASE_URL}/api/transcribe/stream/${this.sessionId}`;
+    const sseUrl = `${API_BASE_URL}/api/transcription/stream/${this.sessionId}`;
     console.log('📡 Connecting to SSE stream:', sseUrl);
 
     this.eventSource = new EventSource(sseUrl);
@@ -331,7 +331,7 @@ class HttpTranscriptionManager {
       // }
       
       // Upload chunk via HTTP - FIXED: Send raw ArrayBuffer for proper binary transfer
-      const response = await fetch(`${API_BASE_URL}/api/transcribe/chunk`, {
+      const response = await fetch(`${API_BASE_URL}/api/transcription/chunk`, {
         method: 'POST',
         headers: {
           'x-session-id': this.sessionId,  // FIXED: Backend expects x-session-id not Session-ID
@@ -438,7 +438,7 @@ class HttpTranscriptionManager {
         
         if (finalChunk.length > 0) {
           const pcmData = this.convertToPCM16(finalChunk);
-          await fetch(`${API_BASE_URL}/api/transcribe/chunk`, {
+          await fetch(`${API_BASE_URL}/api/transcription/chunk`, {
             method: 'POST',
             headers: {
               'x-session-id': this.sessionId,  // Fixed: Use lowercase x-session-id
@@ -451,7 +451,7 @@ class HttpTranscriptionManager {
       }
 
       // End session via HTTP
-      const response = await fetch(`${API_BASE_URL}/api/transcribe/stop`, {
+      const response = await fetch(`${API_BASE_URL}/api/transcription/stop`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -695,7 +695,12 @@ export const useHttpTranscription = (options: UseHttpTranscriptionOptions = {}) 
     const checkBackendConnectivity = async () => {
       try {
         console.log('🔍 Checking backend connectivity...');
-        const response = await fetch(`${API_BASE_URL}/api/transcribe/test`);
+        const response = await fetch(`${API_BASE_URL}/api/transcription/test-local`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         if (response.ok) {
           console.log('✅ Backend is reachable - showing Connected status');
           setIsConnected(true);

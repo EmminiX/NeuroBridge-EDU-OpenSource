@@ -1,0 +1,197 @@
+# NeuroBridge EDU Backend - GPU-Optimized Multi-Stage Dockerfile
+# Educational institution grade GPU deployment with size optimization
+# Implements NVIDIA Container Toolkit best practices for educational ML workloads
+# 
+# Architecture: Ubuntu 22.04 + Python 3.11 + CUDA 12.1 + Whisper GPU acceleration
+# Target: <1.2GB (down from ~2.5GB)
+# Security: Non-root user, restricted GPU access, educational compliance
+
+# Build stage - NVIDIA CUDA development image
+FROM nvidia/cuda:12.1-devel-ubuntu22.04 AS builder
+
+LABEL stage=builder
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Security: Create non-root build user
+RUN groupadd -g 1001 neurobridge && \
+    useradd -r -u 1001 -g neurobridge neurobridge
+
+# Install Python 3.11 and build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    # Python and core tools
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
+    python3-pip \
+    # Build dependencies
+    build-essential \
+    pkg-config \
+    cmake \
+    curl \
+    git \
+    wget \
+    # Audio processing dependencies
+    ffmpeg \
+    libsndfile1-dev \
+    libsndfile1 \
+    # Cleanup
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create Python 3.11 symlinks
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# Create optimized virtual environment
+RUN python3.11 -m venv /opt/venv --copies
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip and install wheel for optimized builds
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy requirements and install dependencies
+COPY python_backend/requirements.txt /tmp/requirements.txt
+
+# Install CPU dependencies first, then override with GPU versions
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Install GPU-optimized PyTorch and related packages
+# Educational institutions often need specific CUDA versions
+RUN pip install --no-cache-dir \
+    torch==2.1.0+cu121 \
+    torchvision==0.16.0+cu121 \
+    torchaudio==2.1.0+cu121 \
+    --index-url https://download.pytorch.org/whl/cu121
+
+# Pre-download Whisper models for educational workloads
+# Cache multiple sizes for different classroom needs
+RUN mkdir -p /opt/whisper_cache && \
+    python -c "\
+import os; \
+os.environ['HF_HUB_DISABLE_PROGRESS_BARS'] = '1'; \
+os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'; \
+from faster_whisper import WhisperModel; \
+models = ['tiny', 'base', 'small']; \
+cache_dir = '/opt/whisper_cache'; \
+print('Pre-downloading Whisper models for educational deployment...'); \
+[print(f'Downloading {model} model...') or WhisperModel(model, device='cpu', download_root=cache_dir) or print(f'{model} model cached') for model in models]; \
+print('All Whisper models cached successfully')" || echo "Whisper model download failed, will retry at runtime"
+
+# Copy and prepare application code
+WORKDIR /app
+COPY python_backend/ ./
+RUN find /app -name "*.pyc" -delete && \
+    find /app -name "__pycache__" -type d -exec rm -rf {} + || true
+
+# Production stage - NVIDIA CUDA runtime (minimal)
+FROM nvidia/cuda:12.1-runtime-ubuntu22.04 AS production
+
+LABEL maintainer="NeuroBridge EDU Team" \
+      version="2.0.0-gpu" \
+      description="GPU-Optimized NeuroBridge EDU Backend for Educational ML Workloads" \
+      org.opencontainers.image.source="https://github.com/neurobridge/neurobridge-edu" \
+      org.opencontainers.image.vendor="NeuroBridge EDU" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      edu.cuda.version="12.1" \
+      edu.python.version="3.11"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Security: Create matching non-root user
+RUN groupadd -g 1001 neurobridge && \
+    useradd -r -u 1001 -g neurobridge neurobridge
+
+# Install minimal runtime dependencies for GPU workloads
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    # Python runtime
+    python3.11 \
+    python3.11-venv \
+    # Essential tools
+    curl \
+    tini \
+    # Audio processing runtime
+    ffmpeg \
+    libsndfile1 \
+    # Cleanup
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create Python symlinks
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# Copy optimized virtual environment and models from builder
+COPY --from=builder --chown=neurobridge:neurobridge /opt/venv /opt/venv
+COPY --from=builder --chown=neurobridge:neurobridge /opt/whisper_cache /app/.cache/whisper
+
+# Set PATH for virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set working directory and create structure
+WORKDIR /app
+RUN mkdir -p /app/data /app/logs /app/.cache && \
+    chown -R neurobridge:neurobridge /app
+
+# Copy application code from builder
+COPY --from=builder --chown=neurobridge:neurobridge /app ./
+
+# Switch to non-root user for security
+USER neurobridge
+
+# Educational GPU environment variables
+ENV HOST=0.0.0.0 \
+    PORT=3939 \
+    LOG_LEVEL=INFO \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    # CUDA and GPU configuration
+    CUDA_VISIBLE_DEVICES=all \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    NVIDIA_REQUIRE_CUDA="cuda>=12.1" \
+    # Educational ML cache optimization
+    HF_HUB_CACHE=/app/.cache/huggingface \
+    TRANSFORMERS_CACHE=/app/.cache/transformers \
+    WHISPER_CACHE=/app/.cache/whisper \
+    HF_HUB_DISABLE_TELEMETRY=1 \
+    HF_HUB_DISABLE_PROGRESS_BARS=1 \
+    # Educational GPU defaults (small model for classroom efficiency)
+    LOCAL_WHISPER_ENABLED=true \
+    LOCAL_WHISPER_MODEL_SIZE=small \
+    LOCAL_WHISPER_DEVICE=auto \
+    TRANSCRIPTION_METHOD=local_first \
+    # GPU memory optimization for shared educational environments
+    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512 \
+    # Performance tuning
+    UVICORN_WORKERS=1 \
+    UVICORN_LOOP=asyncio
+
+# Expose application port
+EXPOSE 3939
+
+# Health check with longer startup time for GPU initialization
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3939/health || exit 1
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Start application with GPU-optimized settings
+CMD ["python", "-m", "uvicorn", "main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "3939", \
+     "--workers", "1", \
+     "--loop", "asyncio", \
+     "--log-level", "info", \
+     "--no-access-log"]

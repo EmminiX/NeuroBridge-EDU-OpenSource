@@ -1,0 +1,206 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "comment": "NeuroBridge EDU Backend - Educational Security Seccomp Profile",
+  "description": "Seccomp profile for Python FastAPI backend with Whisper ML workloads in educational environments. Implements CIS Docker Benchmark security controls.",
+  "architectures": [
+    "SCMP_ARCH_X86_64",
+    "SCMP_ARCH_AARCH64",
+    "SCMP_ARCH_X86"
+  ],
+  "syscalls": [
+    {
+      "names": [
+        "accept",
+        "accept4",
+        "access",
+        "arch_prctl",
+        "bind",
+        "brk",
+        "clone",
+        "close",
+        "connect",
+        "dup",
+        "dup2",
+        "epoll_create",
+        "epoll_create1",
+        "epoll_ctl",
+        "epoll_pwait",
+        "epoll_wait",
+        "execve",
+        "exit",
+        "exit_group",
+        "fchdir",
+        "fchmod",
+        "fchown",
+        "fcntl",
+        "fork",
+        "fstat",
+        "fstatfs",
+        "futex",
+        "getcwd",
+        "getdents",
+        "getdents64",
+        "getegid",
+        "geteuid",
+        "getgid",
+        "getpgrp",
+        "getpid",
+        "getppid",
+        "getrandom",
+        "getsockname",
+        "getsockopt",
+        "getuid",
+        "ioctl",
+        "listen",
+        "lseek",
+        "lstat",
+        "madvise",
+        "mkdir",
+        "mmap",
+        "mprotect",
+        "mremap",
+        "munmap",
+        "nanosleep",
+        "newfstatat",
+        "open",
+        "openat",
+        "pipe",
+        "pipe2",
+        "poll",
+        "prctl",
+        "pread64",
+        "pwrite64",
+        "read",
+        "readlink",
+        "readlinkat",
+        "recvfrom",
+        "recvmsg",
+        "rename",
+        "renameat",
+        "rmdir",
+        "rt_sigaction",
+        "rt_sigprocmask",
+        "rt_sigreturn",
+        "select",
+        "sendfile",
+        "sendmsg",
+        "sendto",
+        "setgid",
+        "setgroups",
+        "setuid",
+        "shutdown",
+        "socket",
+        "socketpair",
+        "stat",
+        "statfs",
+        "symlink",
+        "symlinkat",
+        "time",
+        "times",
+        "uname",
+        "unlink",
+        "unlinkat",
+        "wait4",
+        "waitpid",
+        "write"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "Essential syscalls for Python FastAPI backend operation"
+    },
+    {
+      "names": [
+        "chmod",
+        "fchmodat",
+        "chown",
+        "lchown",
+        "fchownat"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "File permission syscalls for educational data handling"
+    },
+    {
+      "names": [
+        "clock_gettime",
+        "gettimeofday",
+        "clock_getres"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "Time-related syscalls for logging and educational audit trails"
+    },
+    {
+      "names": [
+        "sched_getaffinity",
+        "sched_yield"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "CPU scheduling for ML workload optimization"
+    },
+    {
+      "names": [
+        "getrlimit",
+        "setrlimit"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        {
+          "index": 0,
+          "value": 7,
+          "op": "SCMP_CMP_EQ"
+        }
+      ],
+      "comment": "Resource limits for educational fair use policies"
+    },
+    {
+      "names": [
+        "keyctl",
+        "add_key",
+        "request_key"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block keyring syscalls for educational security"
+    },
+    {
+      "names": [
+        "ptrace"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block debugging syscalls for educational environment security"
+    },
+    {
+      "names": [
+        "reboot",
+        "kexec_load",
+        "kexec_file_load"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block system control syscalls for educational infrastructure protection"
+    },
+    {
+      "names": [
+        "mount",
+        "umount",
+        "umount2",
+        "pivot_root"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block filesystem manipulation for educational container security"
+    },
+    {
+      "names": [
+        "init_module",
+        "finit_module",
+        "delete_module"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block kernel module operations for educational system integrity"
+    },
+    {
+      "names": [
+        "acct",
+        "quotactl"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block accounting syscalls not needed for educational workloads"
+    }
+  ]
+}

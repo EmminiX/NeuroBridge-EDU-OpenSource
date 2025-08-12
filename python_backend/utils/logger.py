@@ -5,7 +5,10 @@ Centralized logging setup for the application
 
 import logging
 import sys
-from config import settings
+import os
+
+# Simple fallback settings - will be overridden by setup_logging if needed
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 
 
 def setup_logging() -> None:
@@ -19,7 +22,7 @@ def setup_logging() -> None:
     
     # Configure root logger
     logging.basicConfig(
-        level=getattr(logging, settings.LOG_LEVEL.upper()),
+        level=getattr(logging, LOG_LEVEL.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(sys.stdout)

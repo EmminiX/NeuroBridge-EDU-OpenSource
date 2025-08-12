@@ -1,0 +1,191 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "comment": "NeuroBridge EDU Frontend - Educational Security Seccomp Profile",
+  "description": "Seccomp profile for Nginx serving React static assets in educational environments. Implements minimal syscall access for web serving security.",
+  "architectures": [
+    "SCMP_ARCH_X86_64",
+    "SCMP_ARCH_AARCH64",
+    "SCMP_ARCH_X86"
+  ],
+  "syscalls": [
+    {
+      "names": [
+        "accept",
+        "accept4",
+        "access",
+        "arch_prctl",
+        "bind",
+        "brk",
+        "chdir",
+        "clone",
+        "close",
+        "connect",
+        "dup",
+        "dup2",
+        "epoll_create",
+        "epoll_create1",
+        "epoll_ctl",
+        "epoll_wait",
+        "execve",
+        "exit",
+        "exit_group",
+        "fchdir",
+        "fcntl",
+        "fork",
+        "fstat",
+        "fstatfs",
+        "futex",
+        "getcwd",
+        "getdents",
+        "getdents64",
+        "getegid",
+        "geteuid",
+        "getgid",
+        "getpgrp",
+        "getpid",
+        "getppid",
+        "getsockname",
+        "getsockopt",
+        "getuid",
+        "ioctl",
+        "listen",
+        "lseek",
+        "lstat",
+        "madvise",
+        "mmap",
+        "mprotect",
+        "mremap",
+        "munmap",
+        "nanosleep",
+        "newfstatat",
+        "open",
+        "openat",
+        "pipe",
+        "pipe2",
+        "poll",
+        "prctl",
+        "pread64",
+        "read",
+        "readlink",
+        "readlinkat",
+        "recvfrom",
+        "recvmsg",
+        "rt_sigaction",
+        "rt_sigprocmask",
+        "rt_sigreturn",
+        "select",
+        "sendfile",
+        "sendmsg",
+        "sendto",
+        "setgid",
+        "setgroups",
+        "setuid",
+        "shutdown",
+        "socket",
+        "socketpair",
+        "stat",
+        "statfs",
+        "time",
+        "uname",
+        "wait4",
+        "waitpid",
+        "write"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "Essential syscalls for Nginx web server operation"
+    },
+    {
+      "names": [
+        "clock_gettime",
+        "gettimeofday",
+        "clock_getres"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "Time syscalls for educational access logging"
+    },
+    {
+      "names": [
+        "sched_getaffinity",
+        "sched_yield"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "CPU scheduling for educational workload optimization"
+    },
+    {
+      "names": [
+        "getrlimit"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "Resource limit queries for educational monitoring"
+    },
+    {
+      "names": [
+        "chmod",
+        "fchmod",
+        "fchmodat",
+        "chown",
+        "fchown",
+        "fchownat",
+        "lchown"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block file permission changes for educational security"
+    },
+    {
+      "names": [
+        "mkdir",
+        "rmdir",
+        "unlink",
+        "unlinkat",
+        "rename",
+        "renameat"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block filesystem modifications for read-only educational serving"
+    },
+    {
+      "names": [
+        "ptrace"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block debugging for educational container security"
+    },
+    {
+      "names": [
+        "reboot",
+        "kexec_load",
+        "kexec_file_load"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block system control for educational infrastructure protection"
+    },
+    {
+      "names": [
+        "mount",
+        "umount",
+        "umount2",
+        "pivot_root"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block mount operations for educational container isolation"
+    },
+    {
+      "names": [
+        "init_module",
+        "finit_module",
+        "delete_module"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block kernel module operations for educational system security"
+    },
+    {
+      "names": [
+        "keyctl",
+        "add_key",
+        "request_key"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "comment": "Block keyring operations for educational security model"
+    }
+  ]
+}
