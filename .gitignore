@@ -7,10 +7,13 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Environment files
+# Environment files (CRITICAL: Never commit these!)
 .env
 .env.local
 .env.*.local
+**/.env
+**/src/.env
+**/python_backend/.env
 
 # Database files
 data/
